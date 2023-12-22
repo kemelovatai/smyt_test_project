@@ -1,0 +1,57 @@
+version: '3'
+
+services:
+  smyt-test:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: django
+    container_name: smyt-test
+    restart: always
+    depends_on:
+      - smyt-test-db
+    volumes:
+      - .:/app
+      - local_media_data:/app/media
+      - local_static_data:/app/static
+    env_file:
+      - conf/.env
+    ports:
+      - "127.0.0.1:8000:8000"
+    command: /start-gunicorn
+    networks:
+      main: { }
+
+  smyt-test-db:
+    image: postgres:15
+    container_name: smyt-test-db
+    restart: always
+    volumes:
+      - local_postgres_data:/var/lib/postgresql/data
+    env_file:
+      - conf/.env
+    networks:
+      main: { }
+
+  nginx:
+    build: ./nginx
+    container_name: nginx
+    volumes:
+      - local_static_data:/static
+      - local_media_data:/media
+    env_file:
+      - conf/.env
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      - smyt-test
+    networks:
+      main: { }
+
+volumes:
+  local_postgres_data: {}
+  local_media_data: {}
+  local_static_data: {}
+
+networks:
+  main: { }
